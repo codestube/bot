@@ -61,6 +61,21 @@ async function deleteTodoByName(userId, guildId, name) {
   await batch.commit();
   return snapshot.size;
 }
+
+async function clearTodos(userId, guildId) {
+  let query = todosCollection.where('userId', '==', userId);
+  if (guildId) {
+    query = query.where('guildId', '==', guildId);
+  }
+
+  const snapshot = await query.get();
+  if (snapshot.empty) return 0;
+
+  const batch = db.batch();
+  snapshot.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+  return snapshot.size;
+}
 // ==============================================
 
 require('dotenv').config();
@@ -77,6 +92,7 @@ const {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  StringSelectMenuBuilder,
 } = require('discord.js');
 
 const client = new Client({
@@ -89,8 +105,10 @@ const client = new Client({
 
 // ============== /todo command ==============
 client.once('ready', async () => {
+  // debug log
   console.log(`Logged in as ${client.user.tag}`);
 
+  // def commands
   const commands = [
     new SlashCommandBuilder()
       .setName('todo')
@@ -118,6 +136,7 @@ client.once('ready', async () => {
       ),
   ].map((cmd) => cmd.toJSON());
 
+  // youre not getting my token lil bro
   const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
   try {
@@ -163,7 +182,7 @@ client.on('interactionCreate', async (interaction) => {
 
           const dueInput = new TextInputBuilder()
             .setCustomId('todo-due')
-            .setLabel('Due time (e.g. 2025-11-30 18:00)')
+            .setLabel('Due time (optional, e.g. 2025-11-30 18:00)')
             .setStyle(TextInputStyle.Short)
             .setRequired(false)
             .setMaxLength(100);
@@ -187,6 +206,7 @@ client.on('interactionCreate', async (interaction) => {
           if (!todos.length) {
             await interaction.reply({
               content: 'You have no to-do items yet. Use `/todo add` to create one.',
+              ephemeral: true, // this is technically an error message
             });
             return;
           }
@@ -213,22 +233,48 @@ client.on('interactionCreate', async (interaction) => {
 
         // /todo delete
         if (sub === 'delete') {
-          const name = interaction.options.getString('name', true);
+          const todos = await getTodos(interaction.user.id, interaction.guildId);
 
-          const deleted = await deleteTodoByName(
-            interaction.user.id,
-            interaction.guildId,
-            name,
-          );
-
-          if (deleted === 0) {
+          if (!todos.length) {
             await interaction.reply({
-              content: `No to-do item named **${name}** was found.`,
-              ephemeral: true, // only show error to user
+              content: 'You have no to-do items to delete.',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          const options = todos.map((todo) => ({
+            label: todo.name || '(no name)',
+            description: ((todo.due ? `Due: ${todo.due}. ` : '') + (todo.description || '')).slice(0, 90),
+            value: todo.id,
+          }));
+
+          const select = new StringSelectMenuBuilder()
+            .setCustomId(`todo:delete:${interaction.user.id}`)
+            .setPlaceholder('Select a task to delete')
+            .addOptions(options);
+
+          const row = new ActionRowBuilder().addComponents(select);
+
+          await interaction.reply({
+            content: 'Choose a task to delete:',
+            components: [row],
+          });
+          return;
+        }
+
+        // /todo-clear
+        if (sub === 'clear') {
+          const deletedCount = await clearTodos(interaction.user.id, interaction.guildId);
+
+          if (deletedCount === 0) {
+            await interaction.reply({
+              content: 'You had no to-do items to clear.',
+              ephemeral: true,
             });
           } else {
             await interaction.reply({
-              content: `Deleted ${deleted} to-do item(s) named **${name}**.`,
+              content: `Cleared ${deletedCount} to-do item(s).`,
             });
           }
           return;
@@ -251,11 +297,50 @@ client.on('interactionCreate', async (interaction) => {
           msg += ` (due: ${due})`;
         }
         if (description) {
-          msg += `\n> ${description}`;
+          msg += `\n> Description: ${description}`;
         }
 
         await interaction.reply({
           content: msg,
+        });
+        return;
+      }
+    }
+
+    // dropdown for select what to delete
+    if (interaction.isStringSelectMenu()) {
+      const [prefix, action, ownerId] = interaction.customId.split(':');
+
+      if (prefix === 'todo' && action === 'delete') {
+        // lil bro tryna delete other's todo :skull:
+        if (interaction.user.id !== ownerId) {
+          await interaction.reply({
+            content: "This delete menu isn't for you.",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        const selectedId = interaction.values[0];
+        const deleted = await deleteTodoById(
+          interaction.user.id,
+          interaction.guildId,
+          selectedId,
+        );
+
+        // wadahelly
+        if (!deleted) {
+          await interaction.reply({
+            content: 'That to-do item could not be found or deleted.',
+            ephemeral: true,
+          });
+          return;
+        }
+
+        // done, remove menu
+        await interaction.update({
+          content: 'To-do item deleted.',
+          components: [],
         });
         return;
       }
@@ -299,11 +384,9 @@ client.on('messageCreate', async (message) => {
       const batch = await message.channel.messages.fetch({ limit: 100, before: lastId });
       if (batch.size === 0) break;
       for (const m of batch.values()) {
-        if (m.author.id === message.author.id) {
-          toDelete.push(m);
-          remaining--;
-          if (remaining === 0) break;
-        }
+        toDelete.push(m);
+        remaining--;
+        if (remaining === 0) break;
       }
       lastId = batch.last().id;
     }
