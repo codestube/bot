@@ -1,0 +1,17 @@
+{
+  "name": "cumdy",
+  "version": "1.0.0",
+  "main": "cumdy.js",
+  "scripts": {
+    "start": "node cumdy.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "discord.js": "^14.24.2",
+    "dotenv": "^17.2.3"
+  }
+}
