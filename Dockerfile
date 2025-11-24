@@ -16,5 +16,4 @@ ENV PORT=8080
 # expose port cuz idk
 EXPOSE 8080
 
-# Package.json should have: "start": "node bot.js"
 CMD ["npm", "start"]
