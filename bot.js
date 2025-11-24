@@ -12,7 +12,11 @@ http.createServer((req, res) => {
 // ================ for firestore ================
 const { Firestore } = require('@google-cloud/firestore');
 
-const db = new Firestore();
+// find todo-list database
+const db = new Firestore({
+  databaseId: 'todo-list',
+});
+
 const todosCollection = db.collection('todos');
 
 // helper func
