@@ -20,11 +20,13 @@ const db = new Firestore({
 const todosCollection = db.collection('todos');
 
 // helper func
-async function addTodo(userId, guildId, description) {
+async function addTodo(userId, guildId, name, description, dueText) {
   const docRef = await todosCollection.add({
     userId,
     guildId: guildId || null,
-    description,
+    name,
+    description: description || '',
+    due: dueText || '',
     completed: false,
     createdAt: new Date(),
   });
@@ -33,16 +35,31 @@ async function addTodo(userId, guildId, description) {
 
 async function getTodos(userId, guildId, limit = 10) {
   let query = todosCollection.where('userId', '==', userId);
-
   if (guildId) {
     query = query.where('guildId', '==', guildId);
   }
 
   const snapshot = await query.limit(limit).get();
-
   const todos = [];
   snapshot.forEach((doc) => todos.push({ id: doc.id, ...doc.data() }));
   return todos;
+}
+
+async function deleteTodoByName(userId, guildId, name) {
+  let query = todosCollection
+    .where('userId', '==', userId)
+    .where('name', '==', name);
+  if (guildId) {
+    query = query.where('guildId', '==', guildId);
+  }
+
+  const snapshot = await query.get();
+  if (snapshot.empty) return 0;
+
+  const batch = db.batch();
+  snapshot.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+  return snapshot.size;
 }
 // ==============================================
 
@@ -81,12 +98,23 @@ client.once('ready', async () => {
       .addSubcommand((sub) =>
         sub
           .setName('add')
-          .setDescription('Add a new to-do item'),
+          .setDescription('Add a new to-do item with name and due time'),
       )
       .addSubcommand((sub) =>
         sub
           .setName('list')
           .setDescription('List your to-do items'),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName('delete')
+          .setDescription('Delete a to-do item by name')
+          .addStringOption((opt) =>
+            opt
+              .setName('name')
+              .setDescription('Exact name of the task to delete')
+              .setRequired(true),
+          ),
       ),
   ].map((cmd) => cmd.toJSON());
 
@@ -109,77 +137,136 @@ client.once('ready', async () => {
 // ============ interaction handlers ===============
 client.on('interactionCreate', async (interaction) => {
   try {
-    // Slash commands
     if (interaction.isChatInputCommand()) {
       if (interaction.commandName === 'todo') {
         const sub = interaction.options.getSubcommand();
 
-        // /todo add -> show modal
+        // /todo add
         if (sub === 'add') {
           const modal = new ModalBuilder()
             .setCustomId('todo-add-modal')
             .setTitle('Add a to-do item');
 
+          const nameInput = new TextInputBuilder()
+            .setCustomId('todo-name')
+            .setLabel('Task name')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setMaxLength(50);
+
           const descriptionInput = new TextInputBuilder()
             .setCustomId('todo-description')
-            .setLabel('What do you need to do?')
+            .setLabel('Description (optional)')
             .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true)
+            .setRequired(false)
             .setMaxLength(200);
 
-          const row = new ActionRowBuilder().addComponents(descriptionInput);
-          modal.addComponents(row);
+          const dueInput = new TextInputBuilder()
+            .setCustomId('todo-due')
+            .setLabel('Due time (e.g. 2025-11-30 18:00)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false)
+            .setMaxLength(100);
+
+          const rows = [
+            new ActionRowBuilder().addComponents(nameInput),
+            new ActionRowBuilder().addComponents(descriptionInput),
+            new ActionRowBuilder().addComponents(dueInput),
+          ];
+
+          modal.addComponents(...rows);
 
           await interaction.showModal(modal);
           return;
         }
 
-        // /todo list 
+        // /todo list
         if (sub === 'list') {
           const todos = await getTodos(interaction.user.id, interaction.guildId);
 
           if (!todos.length) {
             await interaction.reply({
               content: 'You have no to-do items yet. Use `/todo add` to create one.',
-              ephemeral: true,
             });
             return;
           }
 
           const lines = todos.map((todo, idx) => {
-            const prefix = `${idx + 1}.`;
-            const status = todo.completed ? ' ✅' : '';
-            return `${prefix} ${todo.description}${status}`;
+            let line = `${idx + 1}. **${todo.name || '(no name)'}**`;
+            if (todo.due) {
+              line += ` (due: ${todo.due})`;
+            }
+            if (todo.description) {
+              line += ` — ${todo.description}`;
+            }
+            if (todo.completed) {
+              line += ' finished!';
+            }
+            return line;
           });
 
           await interaction.reply({
             content: `Your to-do items:\n${lines.join('\n')}`,
-            ephemeral: true,
           });
+          return;
+        }
+
+        // /todo delete
+        if (sub === 'delete') {
+          const name = interaction.options.getString('name', true);
+
+          const deleted = await deleteTodoByName(
+            interaction.user.id,
+            interaction.guildId,
+            name,
+          );
+
+          if (deleted === 0) {
+            await interaction.reply({
+              content: `No to-do item named **${name}** was found.`,
+              ephemeral: true, // only show error to user
+            });
+          } else {
+            await interaction.reply({
+              content: `Deleted ${deleted} to-do item(s) named **${name}**.`,
+            });
+          }
           return;
         }
       }
     }
 
-    // saves modal 
+    // save modal
     if (interaction.isModalSubmit()) {
       if (interaction.customId === 'todo-add-modal') {
-        const description = interaction.fields.getTextInputValue('todo-description');
+        const name = interaction.fields.getTextInputValue('todo-name');
+        const description =
+          interaction.fields.getTextInputValue('todo-description') || '';
+        const due = interaction.fields.getTextInputValue('todo-due') || '';
 
-        await addTodo(interaction.user.id, interaction.guildId, description);
+        await addTodo(interaction.user.id, interaction.guildId, name, description, due);
+
+        let msg = `Added a new to-do **${name}**`;
+        if (due) {
+          msg += ` (due: ${due})`;
+        }
+        if (description) {
+          msg += `\n> ${description}`;
+        }
 
         await interaction.reply({
-          content: `Added a new to-do:\n> ${description}`,
-          ephemeral: true,
+          content: msg,
         });
         return;
       }
     }
   } catch (err) {
     console.error('Error handling interaction:', err);
+
+    // make error messages ephemeral
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
-        content: 'Something went wrong while handling that /todo action.',
+        content: 'Something went wrong with that /todo command.',
         ephemeral: true,
       });
     }
