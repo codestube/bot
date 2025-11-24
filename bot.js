@@ -45,21 +45,17 @@ async function getTodos(userId, guildId, limit = 10) {
   return todos;
 }
 
-async function deleteTodoByName(userId, guildId, name) {
-  let query = todosCollection
-    .where('userId', '==', userId)
-    .where('name', '==', name);
-  if (guildId) {
-    query = query.where('guildId', '==', guildId);
-  }
+async function deleteTodoById(userId, guildId, id) {
+  const docRef = todosCollection.doc(id);
+  const snap = await docRef.get();
+  if (!snap.exists) return 0;
 
-  const snapshot = await query.get();
-  if (snapshot.empty) return 0;
+  const data = snap.data();
+  if (data.userId !== userId) return 0;
+  if (guildId && data.guildId !== guildId) return 0;
 
-  const batch = db.batch();
-  snapshot.forEach((doc) => batch.delete(doc.ref));
-  await batch.commit();
-  return snapshot.size;
+  await docRef.delete();
+  return 1;
 }
 
 async function clearTodos(userId, guildId) {
@@ -126,13 +122,12 @@ client.once('ready', async () => {
       .addSubcommand((sub) =>
         sub
           .setName('delete')
-          .setDescription('Delete a to-do item by name')
-          .addStringOption((opt) =>
-            opt
-              .setName('name')
-              .setDescription('Exact name of the task to delete')
-              .setRequired(true),
-          ),
+          .setDescription('Delete a to-do item using a dropdown'),
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName('clear')
+          .setDescription('Clear all your to-do items in this server'),
       ),
   ].map((cmd) => cmd.toJSON());
 
