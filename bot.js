@@ -412,31 +412,18 @@ client.on('messageCreate', async (message) => {
   const prefix = 'say ';
   if (!message.content.toLowerCase().startsWith(prefix)) return;
 
+  // someone said I shouldn't gatekeep the command skull
   // only youstube can say it
-  if (message.author.username !== 'youtubeshort') {
-    return message.reply({
-      content: "imagine not able to use this command xd",
-      ephemeral: true,
-    });
-  }
+  // if (message.author.username !== 'youtubeshort') {
+  //   return message.reply({
+  //     content: "imagine not being able to use this command xd",
+  //     ephemeral: true,
+  //   });
+  // }
 
   sayText = message.content.slice(prefix.length).trim();
   try { await message.delete(); } catch (_) {}
   message.channel.send(sayText);
-  // if (message.content.toLowerCase().startsWith(prefix)) {
-  //   // only discord username that equals to `youtubeshort` can use it
-  //   // returns an ephermeral message if not
-  //   if (message.author.username !== "youtubeshort") {
-  //     return message.reply({
-  //       content: "imagine not able to use this command xd",
-  //       ephemeral: true,
-  //     });
-  //   }
-  //   const sayText = message.content.slice(prefix.length).trim();
-  //   message.delete();
-  //   if (sayText.length === 0) return;
-  //   message.channel.send(sayText);
-  // }
 });
 // =================================================
 
