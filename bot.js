@@ -419,11 +419,12 @@ client.on('messageCreate', async (message) => {
         ephemeral: true,
       });
     }
+    const sayText = message.content.slice(prefix.length).trim();
+    message.delete();
+    if (sayText.length === 0) return;
+    message.channel.send(sayText);
   }
-
-  const sayText = message.content.slice(prefix.length).trim();
-  if (sayText.length === 0) return;
-  message.channel.send(sayText);
 });
+// =================================================
 
 client.login(process.env.BOT_TOKEN);
