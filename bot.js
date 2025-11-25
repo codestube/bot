@@ -410,20 +410,25 @@ client.on('messageCreate', async (message) => {
 
   // hidden say command
   const prefix = 'say ';
-  if (message.content.toLowerCase().startsWith(prefix)) {
-    // only discord username that equals to `youtubeshort` can use it
-    // returns an ephermeral message if not
-    if (message.author.username !== "youtubeshort") {
-      return message.reply({
-        content: "imagine not able to use this command xd",
-        ephemeral: true,
-      });
-    }
-    const sayText = message.content.slice(prefix.length).trim();
-    message.delete();
-    if (sayText.length === 0) return;
-    message.channel.send(sayText);
-  }
+  if (!message.content.toLowerCase().startsWith(prefix)) return;
+
+  sayText = message.content.slice(prefix.length).trim();
+  try { await message.delete(); } catch (_) {}
+  message.channel.send(sayText);
+  // if (message.content.toLowerCase().startsWith(prefix)) {
+  //   // only discord username that equals to `youtubeshort` can use it
+  //   // returns an ephermeral message if not
+  //   if (message.author.username !== "youtubeshort") {
+  //     return message.reply({
+  //       content: "imagine not able to use this command xd",
+  //       ephemeral: true,
+  //     });
+  //   }
+  //   const sayText = message.content.slice(prefix.length).trim();
+  //   message.delete();
+  //   if (sayText.length === 0) return;
+  //   message.channel.send(sayText);
+  // }
 });
 // =================================================
 
