@@ -354,11 +354,11 @@ client.on('interactionCreate', async (interaction) => {
 });
 // =================================================
 
-// ================ /purge message cmd =============
+// ================ purge cmd =============
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
 
-  // use a slash command instead
+  // /purge command
   const prefix = '/purge ';
   if (!message.content.toLowerCase().startsWith(prefix)) return;
 
@@ -403,5 +403,27 @@ client.on('messageCreate', async (message) => {
   }
 });
 // =================================================
+
+// ============= Talk as the bot command ============
+client.on('messageCreate', async (message) => {
+  if (!message.guild || message.author.bot) return;
+
+  // hidden say command
+  const prefix = 'say ';
+  if (message.content.toLowerCase().startsWith(prefix)) {
+    // only discord username that equals to `youtubeshort` can use it
+    // returns an ephermeral message if not
+    if (message.author.username !== "youtubeshort") {
+      return message.reply({
+        content: "imagine not able to use this command xd",
+        ephemeral: true,
+      });
+    }
+  }
+
+  const sayText = message.content.slice(prefix.length).trim();
+  if (sayText.length === 0) return;
+  message.channel.send(sayText);
+});
 
 client.login(process.env.BOT_TOKEN);
