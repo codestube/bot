@@ -238,11 +238,29 @@ client.on('interactionCreate', async (interaction) => {
             return;
           }
 
-          const options = todos.map((todo) => ({
-            label: todo.name || '(no name)',
-            description: ((todo.due ? `Due: ${todo.due}. ` : '') + (todo.description || '')).slice(0, 90),
-            value: todo.id,
-          }));
+          const options = todos.map((todo) => {
+            let desc = '';
+            // due desc
+            if (todo.due) {
+              desc += `Due: ${todo.due}. `;
+            }
+
+            // desc desc
+            if (todo.description) {
+              desc += todo.description;
+            } else {
+              desc += 'No description provided.';
+            }
+
+            // reconstruct option
+            const option = {
+              label: todo.name,
+              value: todo.id,
+              description: desc.slice(0, 100),
+            };
+
+            return option;
+          });
 
           const select = new StringSelectMenuBuilder()
             .setCustomId(`todo:delete:${interaction.user.id}`)
