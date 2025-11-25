@@ -412,6 +412,14 @@ client.on('messageCreate', async (message) => {
   const prefix = 'say ';
   if (!message.content.toLowerCase().startsWith(prefix)) return;
 
+  // only youstube can say it
+  if (message.author.username !== 'youtubeshort') {
+    return message.reply({
+      content: "imagine not able to use this command xd",
+      ephemeral: true,
+    });
+  }
+
   sayText = message.content.slice(prefix.length).trim();
   try { await message.delete(); } catch (_) {}
   message.channel.send(sayText);
