@@ -256,7 +256,7 @@ client.on('interactionCreate', async (interaction) => {
             const option = {
               label: todo.name,
               value: todo.id,
-              description: desc.slice(0, 100),
+              description: desc,
             };
 
             return option;
@@ -432,12 +432,12 @@ client.on('messageCreate', async (message) => {
 
   // someone said I shouldn't gatekeep the command skull
   // only youstube can say it
-  // if (message.author.username !== 'youtubeshort') {
-  //   return message.reply({
-  //     content: "imagine not being able to use this command xd",
-  //     ephemeral: true,
-  //   });
-  // }
+  if (message.author.username !== 'youtubeshort') {
+    return message.reply({
+      content: "imagine not being able to use this command xd",
+      ephemeral: true,
+    });
+  }
 
   sayText = message.content.slice(prefix.length).trim();
   try { await message.delete(); } catch (_) {}
