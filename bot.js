@@ -430,19 +430,34 @@ client.on('messageCreate', async (message) => {
   const prefix = 'say ';
   if (!message.content.toLowerCase().startsWith(prefix)) return;
 
-  // someone said I shouldn't gatekeep the command skull
-  // only youstube can say it
-  if (message.author.username !== 'youtubeshort') {
-    return message.reply({
-      content: "imagine not being able to use this command xd",
-      ephemeral: true,
-    });
-  }
+  // // someone said I shouldn't gatekeep the command skull
+  // // only youstube can say it
+  // if (message.author.username !== 'youtubeshort') {
+  //   return message.reply({
+  //     content: "imagine not being able to use this command xd",
+  //     ephemeral: true,
+  //   });
+  // }
 
   sayText = message.content.slice(prefix.length).trim();
   try { await message.delete(); } catch (_) {}
   message.channel.send(sayText);
 });
+// =================================================
+
+// ============= testing command for vuln ============
+client.on('messageCreate', async (message) => {
+  // vuln check
+  if (message.content == 'vuln')
+    // check priv
+  if (message.author.username !== 'youtubeshort') {
+    return message.reply ({
+      content: "you are not me :p"
+    })
+  }
+  try { await message.delete(); } catch (_) {}
+  message.channel.send("You are him! Good job :>");
+})
 // =================================================
 
 client.login(process.env.BOT_TOKEN);
