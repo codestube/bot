@@ -12,6 +12,8 @@ http.createServer((req, res) => {
 // ================ for firestore ================
 const { Firestore } = require('@google-cloud/firestore');
 
+// send a message in the discord channel when it starts up (to do)
+
 // find todo-list database
 const db = new Firestore({
   databaseId: 'todo-list',
@@ -38,7 +40,7 @@ async function getTodos(userId, guildId, limit = 10) {
   if (guildId) {
     query = query.where('guildId', '==', guildId);
   }
-
+  
   const snapshot = await query.limit(limit).get();
   const todos = [];
   snapshot.forEach((doc) => todos.push({ id: doc.id, ...doc.data() }));
@@ -448,16 +450,21 @@ client.on('messageCreate', async (message) => {
 // ============= testing command for vuln ============
 client.on('messageCreate', async (message) => {
   // vuln check
-  if (message.content == 'vuln')
+  if (message.content == 'vuln') {
+    // delete orig message
+    try { await message.delete(); } catch (_) {}
     // check priv
-  if (message.author.username !== 'youtubeshort') {
-    return message.reply ({
-      content: "you are not me :p"
-    })
+    if (message.author.username !== 'youtubeshort') {
+      return message.reply ({
+        content: "you are not me :p"
+      });
+    } else {
+      return message.reply ({
+        content: "You are him! Good job :>"
+      });
+    }
   }
-  try { await message.delete(); } catch (_) {}
-  message.channel.send("You are him! Good job :>");
-})
+});
 // =================================================
 
 client.login(process.env.BOT_TOKEN);
