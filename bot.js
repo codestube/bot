@@ -388,8 +388,18 @@ client.on('interactionCreate', async (interaction) => {
 });
 // =================================================
 
-// ================ purge cmd =============
+// messageCreate handlers
 client.on('messageCreate', async (message) => {
+  if (!message.guild || message.author.bot) return;
+  const content = message.content.toLowerCase();
+
+  if (content.startsWith('/purge ')) return purgeCmd(message);
+  if (content.startsWith('say ')) return sayCmd(message);
+  if (content === 'vulncheck') return vulncheck(message);
+});
+
+// ================ purge cmd =============
+async function purgeCmd(message) {
   if (!message.guild || message.author.bot) return;
 
   // /purge command
@@ -435,11 +445,11 @@ client.on('messageCreate', async (message) => {
     console.error(e);
     message.channel.send('Purge failed (check my permissions/intents).');
   }
-});
+}
 // =================================================
 
 // ============= Talk as the bot command ============
-client.on('messageCreate', async (message) => {
+async function sayCmd(message) {
   if (!message.guild || message.author.bot) return;
 
   // hidden say command
@@ -458,22 +468,26 @@ client.on('messageCreate', async (message) => {
   sayText = message.content.slice(prefix.length).trim();
   try { await message.delete(); } catch (_) {}
   message.channel.send(sayText);
-});
+}
 // =================================================
 
 // ============= testing command for vuln ============
-client.on('messageCreate', async (message) => {
+async function vulncheck(message) {
   // vuln check
-  if (message.content !== 'vuln') return;
+  if (message.content !== 'vulncheck') return;
 
   // check priv
   if (message.author.id === '131614435067297792')
     return message.channel.send("hai youstube :>");
   else if (message.author.username === 'youtubeshort')
     return message.channel.send("hai yous- wait how are you him!? :o");
+  else if (message.author.username === message.guild.members.me.username) {
+    const nick = await message.channel.guild.members.me.displayName;
+    return message.channel.send(`hai im ${nick}! :D`);
+  }
   else
     return message.channel.send("you are not youstube! :p");
-});
+}
 // =================================================
 
 client.login(process.env.BOT_TOKEN);
