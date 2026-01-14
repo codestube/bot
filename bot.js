@@ -455,13 +455,9 @@ client.on('messageCreate', async (message) => {
     try { await message.delete(); } catch (_) {}
     // check priv
     if (message.author.username !== 'youtubeshort') {
-      return message.reply ({
-        content: "you are not me :p"
-      });
+      message.channel.send("you are not me! :p");
     } else {
-      return message.reply ({
-        content: "You are him! Good job :>"
-      });
+      message.channel.send("you are me! good job :>");
     }
   }
 });
