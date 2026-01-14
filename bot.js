@@ -103,9 +103,15 @@ const client = new Client({
 
 // ============== /todo command ==============
 client.once('ready', async () => {
-  // debug log
   console.log(`Logged in as ${client.user.tag}`);
 
+  // sanity check
+  const announceSanityChannelID = "1438097113006215262";
+  const sanityChannel = await client.channels.fetch(announceSanityChannelID);
+  if (sanityChannel) {
+    sanityChannel.send('i got updatey :D');
+  }
+  
   // def commands
   const commands = [
     new SlashCommandBuilder()
@@ -452,14 +458,13 @@ client.on('messageCreate', async (message) => {
   // vuln check
   if (message.content !== 'vuln') return;
 
-  // delete orig message
-  try { await message.delete(); } catch (_) {}
-
   // check priv
-  if (message.author.username !== 'youtubeshort') {
+  if (message.author.id === '131614435067297792')
+    return message.channel.send("hai youstube :>");
+  else if (message.author.username === 'youtubeshort')
+    return message.channel.send("hai yous- wait how are you him!? :o");
+  else
     return message.channel.send("you are not youstube! :p");
-  }
-  return message.channel.send("you are youstube! or are you? :o");
 });
 // =================================================
 
