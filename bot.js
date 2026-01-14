@@ -450,16 +450,16 @@ client.on('messageCreate', async (message) => {
 // ============= testing command for vuln ============
 client.on('messageCreate', async (message) => {
   // vuln check
-  if (message.content == 'vuln') {
-    // delete orig message
-    try { await message.delete(); } catch (_) {}
-    // check priv
-    if (message.author.username !== 'youtubeshort') {
-      message.channel.send("you are not me! :p");
-    } else {
-      message.channel.send("you are me! good job :>");
-    }
+  if (message.content !== 'vuln') return;
+
+  // delete orig message
+  try { await message.delete(); } catch (_) {}
+
+  // check priv
+  if (message.author.username !== 'youtubeshort') {
+    return message.channel.send("you are not youstube! :p");
   }
+  return message.channel.send("you are youstube! or are you? :o");
 });
 // =================================================
 
