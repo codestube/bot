@@ -481,9 +481,9 @@ async function vulncheck(message) {
     return message.channel.send("hai youstube :>");
   else if (message.author.username === 'youtubeshort')
     return message.channel.send("hai yous- wait how are you him!? :o");
-  else if (message.author.username === message.guild.members.me.username) {
-    const nick = await message.channel.guild.members.me.displayName;
-    return message.channel.send(`hai im ${nick}! :D`);
+  else if (message.author.id === client.user.id) {
+    const bot = await message.guild.members.fetchMe();
+    return message.channel.send(`hai im ${bot.displayName}! :D`);
   }
   else
     return message.channel.send("you are not youstube! :p");
