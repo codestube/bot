@@ -101,17 +101,21 @@ const client = new Client({
   ],
 });
 
+// sleep command
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // ============== /todo command ==============
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
   // sanity check
+  let statusMessage;
   const announceSanityChannelID = "1438097113006215262";
   const sanityChannel = await client.channels.fetch(announceSanityChannelID);
-  if (sanityChannel) {
-    sanityChannel.send('i got updatey :D');
-  }
   
+  // im clinically insane
+  if (sanityChannel) { statusMessage = await sanityChannel.send('i am erecting :3 please wait') };
+
   // def commands
   const commands = [
     new SlashCommandBuilder()
@@ -119,41 +123,45 @@ client.once('ready', async () => {
       .setDescription('Manage your to-do list')
       .addSubcommand((sub) =>
         sub
-          .setName('add')
-          .setDescription('Add a new to-do item with name and due time'),
-      )
-      .addSubcommand((sub) =>
+      .setName('add')
+      .setDescription('Add a new to-do item with name and due time'),
+    )
+    .addSubcommand((sub) =>
+      sub
+    .setName('list')
+    .setDescription('List your to-do items'),
+  )
+  .addSubcommand((sub) =>
         sub
-          .setName('list')
-          .setDescription('List your to-do items'),
-      )
-      .addSubcommand((sub) =>
-        sub
-          .setName('delete')
+  .setName('delete')
           .setDescription('Delete a to-do item using a dropdown'),
-      )
-      .addSubcommand((sub) =>
-        sub
-          .setName('clear')
-          .setDescription('Clear all your to-do items in this server'),
+        )
+        .addSubcommand((sub) =>
+          sub
+        .setName('clear')
+        .setDescription('Clear all your to-do items in this server'),
       ),
-  ].map((cmd) => cmd.toJSON());
+    ].map((cmd) => cmd.toJSON());
 
-  // youre not getting my token lil bro
-  const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
-
-  try {
-    for (const [guildId, guild] of client.guilds.cache) {
-      await rest.put(
-        Routes.applicationGuildCommands(client.user.id, guildId),
-        { body: commands },
-      );
+    // youre not getting my token lil bro
+    const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
+    
+    try {
+      for (const [guildId, guild] of client.guilds.cache) {
+        await rest.put(
+          Routes.applicationGuildCommands(client.user.id, guildId),
+          { body: commands },
+        );
       console.log(`Registered /todo in guild ${guild.name} (${guildId})`);
     }
   } catch (err) {
     console.error('Error registering slash commands:', err);
   }
+
+  // yay finish initializationing (i cant english)
+  await statusMessage.edit('i am fully erect :D');
 });
+
 // =================================================
 
 // ============ interaction handlers ===============
