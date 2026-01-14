@@ -390,12 +390,12 @@ client.on('interactionCreate', async (interaction) => {
 
 // messageCreate handlers
 client.on('messageCreate', async (message) => {
-  if (!message.guild || message.author.bot) return;
   const content = message.content.toLowerCase();
-
+  if (content === 'vulncheck') return vulncheck(message);
+  
+  if (!message.guild || message.author.bot) return;
   if (content.startsWith('/purge ')) return purgeCmd(message);
   if (content.startsWith('say ')) return sayCmd(message);
-  if (content === 'vulncheck') return vulncheck(message);
 });
 
 // ================ purge cmd =============
